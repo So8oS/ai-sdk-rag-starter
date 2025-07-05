@@ -50,7 +50,7 @@ export const findRelevantContent = async (
     .from(embeddings)
     .where(gt(similarity, 0.5))
     .orderBy(desc(similarity))
-    .limit(5);
+    .limit(15);
 
   console.log("📦 Retrieved chunks:", similarChunks);
 

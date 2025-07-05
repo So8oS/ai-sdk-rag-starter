@@ -25,6 +25,7 @@ export async function POST(req: Request) {
     Keep responses short and concise. Answer in a single sentence where possible.
     If you are unsure, use the getInformation tool and you can use common sense to reason based on the information you do have.
     Use your abilities as a reasoning machine to answer questions based on the information you do have.
+    When answering, always follow this structure: retrieve the most relevant law article and include its number. All answers must be in Arabic.
 `,
     tools: {
       // addResource: tool({
@@ -43,12 +44,12 @@ export async function POST(req: Request) {
           question: z.string().describe("the users question"),
           similarQuestions: z.array(z.string()).describe("keywords to search"),
         }),
-        execute: async ({ similarQuestions }) => {
+        execute: async ({ question, similarQuestions }) => {
+          const queries = [question];
           const results = await Promise.all(
-            similarQuestions.map(
-              async (question) => await findRelevantContent(question)
-            )
+            queries.map(async (q) => findRelevantContent(q))
           );
+
           // Flatten the array of arrays and remove duplicates based on 'name'
           const uniqueResults = Array.from(
             new Map(results.flat().map((item) => [item?.name, item])).values()
@@ -78,8 +79,10 @@ export async function POST(req: Request) {
                 .describe("similar questions to the user's query. be concise."),
             }),
             prompt: `Analyze this query: "${query}". Provide the following:
-                    3 similar questions that could help answer the user's query`,
+                    3 questions but written in a way that explains the user's query in different ways
+                    make sure to not hallucinate or add any information that is not in the user's query or context that might lead to capturing information from irrelevant sources`,
           });
+          console.log("🔍 Questions:", object.questions);
           return object.questions;
         },
       }),
